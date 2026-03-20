@@ -14,7 +14,14 @@ namespace MCPForUnity.Editor.Setup
     public static class SkillSyncService
     {
         private const string DefaultRepoUrl = "https://github.com/xc12138/UnityMCP";
-        private const string SkillSubdir = ".claude/skills/unity-mcp-skill";
+        private static readonly string[] SkillSubdirCandidates =
+        {
+            // Current repository layout
+            "UnityMCP/unity-mcp-skill",
+            "unity-mcp-skill",
+            // Legacy layout kept for backwards compatibility
+            ".claude/skills/unity-mcp-skill"
+        };
         private const string SyncOwnershipMarker = ".unity-mcp-skill-sync";
         private const string LastSyncedCommitKeyPrefix = "UnityMcpSkillSync.LastSyncedCommit";
 
@@ -72,7 +79,7 @@ namespace MCPForUnity.Editor.Setup
             }
 
             log?.Invoke($"Target repository: {repoInfo.Owner}/{repoInfo.Repo}@{branch}");
-            var snapshot = FetchRemoteSnapshot(repoInfo, branch, SkillSubdir, log);
+            var snapshot = FetchRemoteSnapshot(repoInfo, branch, SkillSubdirCandidates, log);
             var installPath = ResolveAndValidateInstallPath(installDir);
 
             if (!Directory.Exists(installPath))
@@ -113,7 +120,10 @@ namespace MCPForUnity.Editor.Setup
 
         private static string GetLastSyncedCommitKey(string repoUrl, string branch)
         {
-            var scope = $"{repoUrl}|{branch}|{NormalizeRemotePath(SkillSubdir)}";
+            var keyScopePath = SkillSubdirCandidates.Length > 0
+                ? NormalizeRemotePath(SkillSubdirCandidates[0])
+                : string.Empty;
+            var scope = $"{repoUrl}|{branch}|{keyScopePath}";
             using var sha256 = SHA256.Create();
             var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(scope));
             var suffix = BitConverter.ToString(hash).Replace("-", string.Empty).ToLowerInvariant();
@@ -174,7 +184,11 @@ namespace MCPForUnity.Editor.Setup
             return true;
         }
 
-        private static RemoteSnapshot FetchRemoteSnapshot(GitHubRepoInfo repoInfo, string branch, string subdir, Action<string> log)
+        private static RemoteSnapshot FetchRemoteSnapshot(
+            GitHubRepoInfo repoInfo,
+            string branch,
+            IEnumerable<string> subdirCandidates,
+            Action<string> log)
         {
             using var client = CreateGitHubClient();
             var commitSha = FetchBranchHeadCommitSha(client, repoInfo, branch, log);
@@ -194,11 +208,43 @@ namespace MCPForUnity.Editor.Setup
                     "Sync was aborted to prevent accidental deletion of valid local files.");
             }
 
-            var normalizedSubdir = NormalizeRemotePath(subdir);
-            var subdirPrefix = string.IsNullOrEmpty(normalizedSubdir) ? string.Empty : $"{normalizedSubdir}/";
-            var remoteFiles = new Dictionary<string, string>(StringComparer.Ordinal);
+            var normalizedCandidates = (subdirCandidates ?? Array.Empty<string>())
+                .Select(NormalizeRemotePath)
+                .Where(path => !string.IsNullOrEmpty(path))
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
 
-            foreach (var entry in treeResponse.tree)
+            if (normalizedCandidates.Count == 0)
+            {
+                throw new InvalidOperationException("No remote skill subdirectory candidates configured.");
+            }
+
+            foreach (var candidate in normalizedCandidates)
+            {
+                var remoteFiles = CollectRemoteFilesUnderSubdir(treeResponse.tree, candidate, log);
+                if (remoteFiles.Count <= 0)
+                {
+                    continue;
+                }
+
+                log?.Invoke($"Using remote skill directory: {candidate}");
+                log?.Invoke($"Remote file count: {remoteFiles.Count}");
+                return new RemoteSnapshot(commitSha, candidate, remoteFiles);
+            }
+
+            throw new InvalidOperationException(
+                $"Remote directory not found. Tried: {string.Join(", ", normalizedCandidates)}");
+        }
+
+        private static Dictionary<string, string> CollectRemoteFilesUnderSubdir(
+            IEnumerable<GitHubTreeEntry> treeEntries,
+            string normalizedSubdir,
+            Action<string> log)
+        {
+            var remoteFiles = new Dictionary<string, string>(StringComparer.Ordinal);
+            var subdirPrefix = string.IsNullOrEmpty(normalizedSubdir) ? string.Empty : $"{normalizedSubdir}/";
+
+            foreach (var entry in treeEntries)
             {
                 if (!string.Equals(entry.type, "blob", StringComparison.Ordinal))
                 {
@@ -234,13 +280,7 @@ namespace MCPForUnity.Editor.Setup
                 remoteFiles[safeRelativePath] = entry.sha.Trim().ToLowerInvariant();
             }
 
-            if (remoteFiles.Count == 0)
-            {
-                throw new InvalidOperationException($"Remote directory not found: {normalizedSubdir}");
-            }
-
-            log?.Invoke($"Remote file count: {remoteFiles.Count}");
-            return new RemoteSnapshot(commitSha, normalizedSubdir, remoteFiles);
+            return remoteFiles;
         }
 
         private static string FetchBranchHeadCommitSha(HttpClient client, GitHubRepoInfo repoInfo, string branch, Action<string> log)
