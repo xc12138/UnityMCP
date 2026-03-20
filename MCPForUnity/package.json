@@ -1,9 +1,9 @@
 {
-  "name": "com.coplaydev.unity-mcp",
-  "version": "9.6.1-beta.1",
+  "name": "com.xc12138.unity-mcp",
+  "version": "1.1.1",
   "displayName": "MCP for Unity",
   "description": "A bridge that connects AI assistants to Unity via the MCP (Model Context Protocol). Allows AI clients like Claude Code, Cursor, and VSCode to directly control your Unity Editor for enhanced development workflows.\n\nFeatures automated setup wizard, cross-platform support, and seamless integration with popular AI development tools.\n\nJoin Our Discord: https://discord.gg/y4p8KfzrN4",
-  "unity": "2021.3",
+  "unity": "6000.0.0+",
   "documentationUrl": "https://github.com/xc12138/UnityMCP",
   "licensesUrl": "https://github.com/xc12138/UnityMCP/blob/main/LICENSE",
   "dependencies": {
@@ -20,8 +20,8 @@
     "mcp-client"
   ],
   "author": {
-    "name": "Coplay",
-    "email": "support@coplay.dev",
-    "url": "https://coplay.dev"
+    "name": "xc12138",
+    "email": "xc12138@gmail.com",
+    "url": "https://github.com/xc12138"
   }
 }
