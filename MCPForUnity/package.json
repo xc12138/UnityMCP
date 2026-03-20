@@ -3,7 +3,8 @@
   "version": "1.1.1",
   "displayName": "MCP for Unity",
   "description": "A bridge that connects AI assistants to Unity via the MCP (Model Context Protocol). Allows AI clients like Claude Code, Cursor, and VSCode to directly control your Unity Editor for enhanced development workflows.\n\nFeatures automated setup wizard, cross-platform support, and seamless integration with popular AI development tools.\n\nJoin Our Discord: https://discord.gg/y4p8KfzrN4",
-  "unity": "6000.0.0+",
+  "unity": "6000.0",
+  "unityRelease": "0f1",
   "documentationUrl": "https://github.com/xc12138/UnityMCP",
   "licensesUrl": "https://github.com/xc12138/UnityMCP/blob/main/LICENSE",
   "dependencies": {
