@@ -738,7 +738,7 @@ manage_ui(
 
 ### uGUI（基于 Canvas）工作流
 
-The sections below cover legacy Canvas-based UI using `batch_execute`. Use these when working with existing uGUI projects or when UI Toolkit is not suitable.
+The sections below cover Canvas-based UI using `batch_execute`. Use these when working with existing uGUI projects or when UI Toolkit is not suitable. Prefer TMP controls (`TextMeshProUGUI`, `TMP_Dropdown`, `TMP_InputField`) and avoid Legacy `Text/Dropdown/Input Field`.
 
 ### RectTransform 尺寸设置（所有 UI 子项都很关键）
 
@@ -1339,6 +1339,7 @@ batch_execute(fail_fast=True, commands=[
 | **Panel** | Image + RectTransform sizing | Container. Set color for background. |
 | **Text** | TextMeshProUGUI (or Text if no TMP) + RectTransform | Check `packages.textmeshpro`. |
 | **Button** | Image + Button + child(TextMeshProUGUI) + RectTransform | Image = visual, Button = click handler. |
+| **Dropdown** | Image + TMP_Dropdown + template children + caption/item `TextMeshProUGUI` | Use TMP variant, not legacy `Dropdown`. |
 | **Slider** | Slider + Image + children + **wire fillRect/handleRect** | Won't function without wiring. |
 | **Toggle** | Toggle + children + **wire graphic** | Wire checkmark Image to `graphic`. |
 | **Input Field** | Image + TMP_InputField + children + **wire textViewport/textComponent/placeholder** | Won't function without wiring. |
