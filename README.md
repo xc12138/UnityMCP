@@ -1,2 +1,0 @@
-# UnityMCP
-My Unity MCP
