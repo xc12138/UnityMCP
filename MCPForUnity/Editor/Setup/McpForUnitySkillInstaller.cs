@@ -42,7 +42,8 @@ namespace MCPForUnity.Editor.Setup
             var defaultInstall = GetDefaultInstallDir(userHome);
             _installDir = EditorPrefs.GetString(InstallDirKey, defaultInstall);
             var legacyClaudeSkillDir = Path.Combine(userHome, ".claude", "skills", "unity-mcp-skill");
-            if (PathsEqual(_installDir, legacyClaudeSkillDir))
+            var legacyCodexSkillDir = Path.Combine(userHome, ".codex", "skills", "unity-mcp-skill");
+            if (PathsEqual(_installDir, legacyClaudeSkillDir) || PathsEqual(_installDir, legacyCodexSkillDir))
             {
                 _installDir = defaultInstall;
             }
@@ -143,7 +144,7 @@ namespace MCPForUnity.Editor.Setup
 
         private static string GetDefaultInstallDir(string userHome)
         {
-            return Path.Combine(userHome, ".codex", "skills", "unity-mcp-skill");
+            return Path.Combine(userHome, ".cursor", "skills", "unity-mcp-skill");
         }
 
         private static bool PathsEqual(string left, string right)
