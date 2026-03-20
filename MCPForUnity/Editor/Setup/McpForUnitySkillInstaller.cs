@@ -12,16 +12,11 @@ namespace MCPForUnity.Editor.Setup
     {
         private const string RepoUrlKey = "UnityMcpSkillSync.RepoUrl";
         private const string BranchKey = "UnityMcpSkillSync.Branch";
-        private const string CliKey = "UnityMcpSkillSync.Cli";
         private const string InstallDirKey = "UnityMcpSkillSync.InstallDir";
-        private const string CodexCli = "codex";
-        private const string ClaudeCli = "claude";
         private static readonly string[] BranchOptions = { "main" };
-        private static readonly string[] CliOptions = { CodexCli, ClaudeCli };
 
         private string _repoUrl;
         private string _targetBranch;
-        private string _cliType;
         private string _installDir;
         private Vector2 _scroll;
         private volatile bool _isRunning;
@@ -43,12 +38,15 @@ namespace MCPForUnity.Editor.Setup
             {
                 _targetBranch = "main";
             }
-            _cliType = EditorPrefs.GetString(CliKey, CodexCli);
-            if (!CliOptions.Contains(_cliType))
+
+            var defaultInstall = GetDefaultInstallDir(userHome);
+            _installDir = EditorPrefs.GetString(InstallDirKey, defaultInstall);
+            var legacyClaudeSkillDir = Path.Combine(userHome, ".claude", "skills", "unity-mcp-skill");
+            if (PathsEqual(_installDir, legacyClaudeSkillDir))
             {
-                _cliType = CodexCli;
+                _installDir = defaultInstall;
             }
-            _installDir = EditorPrefs.GetString(InstallDirKey, GetDefaultInstallDir(userHome, _cliType));
+
             EditorApplication.update += OnEditorUpdate;
         }
 
@@ -57,7 +55,6 @@ namespace MCPForUnity.Editor.Setup
             EditorApplication.update -= OnEditorUpdate;
             EditorPrefs.SetString(RepoUrlKey, _repoUrl);
             EditorPrefs.SetString(BranchKey, _targetBranch);
-            EditorPrefs.SetString(CliKey, _cliType);
             EditorPrefs.SetString(InstallDirKey, _installDir);
         }
 
@@ -79,20 +76,6 @@ namespace MCPForUnity.Editor.Setup
 
                 var selectedBranchIndex = EditorGUILayout.Popup("Branch", branchIndex, BranchOptions);
                 _targetBranch = BranchOptions[selectedBranchIndex];
-
-                var cliIndex = Array.IndexOf(CliOptions, _cliType);
-                if (cliIndex < 0)
-                {
-                    cliIndex = 0;
-                }
-
-                var selectedCliIndex = EditorGUILayout.Popup("CLI", cliIndex, CliOptions);
-                if (selectedCliIndex != cliIndex)
-                {
-                    var previousCli = _cliType;
-                    _cliType = CliOptions[selectedCliIndex];
-                    TryApplyCliDefaultInstallPath(previousCli, _cliType);
-                }
 
                 _installDir = EditorGUILayout.TextField("Install Dir", _installDir);
             }
@@ -158,27 +141,9 @@ namespace MCPForUnity.Editor.Setup
                 });
         }
 
-        private void TryApplyCliDefaultInstallPath(string previousCli, string currentCli)
+        private static string GetDefaultInstallDir(string userHome)
         {
-            var userHome = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            var previousDefaultInstall = GetDefaultInstallDir(userHome, previousCli);
-            var currentDefaultInstall = GetDefaultInstallDir(userHome, currentCli);
-
-            if (string.IsNullOrWhiteSpace(_installDir) || PathsEqual(_installDir, previousDefaultInstall))
-            {
-                _installDir = currentDefaultInstall;
-            }
-        }
-
-        private static string GetDefaultInstallDir(string userHome, string cliType)
-        {
-            var baseDir = IsClaudeCli(cliType) ? ".claude" : ".codex";
-            return Path.Combine(userHome, baseDir, "skills/unity-mcp-skill");
-        }
-
-        private static bool IsClaudeCli(string cliType)
-        {
-            return string.Equals(cliType, ClaudeCli, StringComparison.Ordinal);
+            return Path.Combine(userHome, ".codex", "skills", "unity-mcp-skill");
         }
 
         private static bool PathsEqual(string left, string right)

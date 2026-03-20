@@ -16,11 +16,8 @@ namespace MCPForUnity.Editor.Setup
         private const string DefaultRepoUrl = "https://github.com/xc12138/UnityMCP";
         private static readonly string[] SkillSubdirCandidates =
         {
-            // Current repository layout
             "UnityMCP/unity-mcp-skill",
             "unity-mcp-skill",
-            // Legacy layout kept for backwards compatibility
-            ".claude/skills/unity-mcp-skill"
         };
         private const string SyncOwnershipMarker = ".unity-mcp-skill-sync";
         private const string LastSyncedCommitKeyPrefix = "UnityMcpSkillSync.LastSyncedCommit";
